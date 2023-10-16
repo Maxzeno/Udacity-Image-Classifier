@@ -107,7 +107,8 @@ def primaryloader_model(architecture="vgg16"):
         model.name = "vgg16"
         print("Network architecture specified as vgg16.")
     else: 
-        exec("model = models.{}(pretrained=True)".format(architecture))
+        model_class = getattr(models, architecture)
+        model = model_class(pretrained=True)
         model.name = architecture
     
     # Freeze parameters so we don't backprop through them
@@ -153,26 +154,26 @@ def validation(model, testloader, criterion, device):
     return test_loss, accuracy
 
 # Function network_trainer represents the training of the network model
-def network_trainer(Model, Trainloader, Testloader, Device, 
-                  Criterion, Optimizer, Epochs, Print_every, Steps):
+def network_trainer(model, trainloader, testloader, device, 
+                  criterion, optimizer, epochs, print_every, steps):
     # Check Model Kwarg
-    if type(Epochs) == type(None):
-        Epochs = 5
+    if type(epochs) == type(None):
+        epochs = 5
         print("Number of Epochs specificed as 5.")    
  
     print("Training process initializing .....\n")
 
     # Train Model
-    for e in range(Epochs):
+    for e in range(epochs):
         running_loss = 0
-        Model.train() # Technically not necessary, setting this for good measure
+        model.train() # Technically not necessary, setting this for good measure
         
-        for ii, (inputs, labels) in enumerate(Trainloader):
-            Steps += 1
+        for ii, (inputs, labels) in enumerate(trainloader):
+            steps += 1
             
-            inputs, labels = inputs.to(Device), labels.to(Device)
+            inputs, labels = inputs.to(device), labels.to(device)
             
-            Optimizer.zero_grad()
+            optimizer.zero_grad()
             
             # Forward and backward passes
             outputs = model.forward(inputs)
@@ -186,7 +187,7 @@ def network_trainer(Model, Trainloader, Testloader, Device,
                 model.eval()
 
                 with torch.no_grad():
-                    valid_loss, accuracy = validation(model, validloader, criterion)
+                    valid_loss, accuracy = validation(model, testloader, criterion)
             
                 print("Epoch: {}/{} | ".format(e+1, epochs),
                      "Training Loss: {:.4f} | ".format(running_loss/print_every),
@@ -196,7 +197,7 @@ def network_trainer(Model, Trainloader, Testloader, Device,
                 running_loss = 0
                 model.train()
 
-    return Model
+    return model
 
 #Function validate_model(Model, Testloader, Device) validate the above model on test data images
 def validate_model(Model, Testloader, Device):
@@ -272,10 +273,10 @@ def main():
                                          hidden_units=args.hidden_units)
      
     # Check for GPU
-    device = check_gpu(gpu_arg=args.gpu);
+    device = check_gpu(gpu_arg=args.gpu)
     
     # Send model to device
-    model.to(device);
+    model.to(device)
     
     # Check for learnrate args
     if type(args.learning_rate) == type(None):

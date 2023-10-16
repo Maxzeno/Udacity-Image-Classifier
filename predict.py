@@ -67,7 +67,8 @@ def load_checkpoint(checkpoint_path):
         model = models.vgg16(pretrained=True)
         model.name = "vgg16"
     else: 
-        exec("model = models.{}(pretrained=True)".checkpoint['architecture'])
+        model_class = getattr(models, checkpoint['architecture'])
+        model = model_class(pretrained=True)
         model.name = checkpoint['architecture']
     
     # Freeze parameters so we don't backprop through them
